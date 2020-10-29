@@ -18,62 +18,13 @@ const passport = require('passport');
 const jwt = require("jsonwebtoken");
 const { decode } = require('punycode');
 let errorMessage={};
+let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 require('./server/passportConfig.js')(passport);
-app.get("/post/:q",function(req,res){
-  let query = req.params.q;
-  console.log(query);
-  let result;
-  Post.find({topic:query},(err,post) => {
-    if (err) console.log(err)
-    else query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created}));
-  })
-  Post.find({text:query},(err,post) => {
-    if (err) console.log(err)
-    else query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created}));
-  })
-})
-app.get("/api/post",function(req,res){
-  const postList = Post.find({}).populate({path: 'author',option: {lean: true}}).lean();
-  postList.exec(function(err,post){
-    if(err) console.log(err)
-    else {
-      res.send(post.map((val)=> ({topic: val.topic, id: val._id,created: val.created,author: val.author.user, userId: val.author._id})))
-    };
-  })
- 
-})
-app.post('/post', function (req, res){
-  jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
-    if (err) res.status(400).json(err)
-    else {
-        User.findOne({user: decodedToken.user}, (err,userFound) => {
-          if (err) {res.status(404).json({error:"user not found"})}
-          else{
-            let newPost = new Post({
-              topic: req.body.postTopic+"",
-              text: req.body.postText,
-              author: userFound._id
-          })
-          newPost.save((err,postSaved) => {
-            if(err) res.status(404).json({error: "cannot save post"})
-            else {
-              console.log(postSaved);
-              userFound.post.push(postSaved);
-              userFound.save((err,userSavedPost) => {
-                if (err) res.status(404).json({error: "something's wrong"});
-          
-              })
-              res.redirect("/forum/GeneralDiss/post");
-              
-            }
-          })
-        }
-        })
-      }  
-})
-})
+
+
+
 app.post("/user/signup",function(req,res){
     let newUser = new User({
       user: req.body.user,
@@ -104,7 +55,7 @@ app.post("/user/signup",function(req,res){
                   if (err) console.log(err);
                   else if (userSaved) {
                     console.log(userSaved);
-                    res.redirect("/");
+                    res.send('Success')
                   }
                   else res.status(400).json(errorMessage);
                 })
@@ -127,6 +78,7 @@ app.post("/user/signup",function(req,res){
       })
       let validateLogin = inputValidator(loggedUser,false);
       if (!validateLogin.isValid) res.status(404).json(validateLogin.error);
+      else{
       User.findOne({user: loggedUser.user},(err,userFound) => {
           if (err) res.status(404).json({inputError: "Some error occured!"});
           if (!userFound) res.status(404).json({inputNotFound:"Invalid Username or Password"});
@@ -150,9 +102,9 @@ app.post("/user/signup",function(req,res){
               else res.status(404).json({inputNotFound:"Invalid Username or Password"})
             })
           }
-        })
+        })}
       })
-      app.get("/user/verifyJwt",function(req,res){
+      app.get("/user/verify",function(req,res){
         (jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) =>{
           if (err) res.status(404).json({jwtInvalid: "Invalid token"})
           else {res.json(decodedToken)};
@@ -167,11 +119,65 @@ app.post("/user/signup",function(req,res){
   
 
 
+      app.get("/post/:q",function(req,res){
+        let query = req.params.q;
+        console.log(query);
+        let result;
+        Post.find({topic:query},(err,post) => {
+          if (err) console.log(err)
+          else query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created}));
+        })
+        Post.find({text:query},(err,post) => {
+          if (err) console.log(err)
+          else query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created}));
+        })
+      })
+      app.get("/api/post",function(req,res){
+        const postList = Post.find({}).populate({path: 'author',option: {lean: true}}).lean();
+        postList.exec(function(err,post){
+          if(err) console.log(err)
+          else {
+            res.send(post.map((val)=> ({topic: val.topic, id: val._id,created: val.created,author: val.author.user, userId: val.author._id})))
+          };
+        })
+       
+      })
+      app.post('/post', function (req, res){
+        jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
+          if (err) res.status(400).json(err)
+          else {
+              User.findOne({user: decodedToken.user}, (err,userFound) => {
+                if (err) {res.status(404).json({error:"user not found"})}
+                else{
+                  let newPost = new Post({
+                    topic: req.body.postTopic+"",
+                    text: req.body.postText,
+                    author: userFound._id
+                })
+                newPost.save((err,postSaved) => {
+                  if(err) res.status(404).json({error: "cannot save post"})
+                  else {
+                    console.log(postSaved);
+                    userFound.post.push(postSaved);
+                    userFound.save((err,userSavedPost) => {
+                      if (err) res.status(404).json({error: "something's wrong"});
+                
+                    })
+                    res.redirect("/forum/GeneralDiss/post");
+                    
+                  }
+                })
+              }
+              })
+            }  
+      })
+      }
+      )
 
-app.get('*', function (req, res) {
-  
-   res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
+
+app.get('/',(req,res) => {
+  res.send('nothing here')
+})
 
 
-app.listen(process.env.PORT || 8080);
+app.listen(process.env.PORT || 8080,() => console.log('works'));
