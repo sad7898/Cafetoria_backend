@@ -97,7 +97,7 @@ app.post("/user/signup",function(req,res){
                 jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
                   if (err) res.status(404).json({cannotSign:"error when signing jwt"})
                   else  {
-                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite:"none" });
+                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite:"none",secure: true });
                     res.json({token})
                   }
                 })
