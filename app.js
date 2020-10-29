@@ -111,7 +111,7 @@ app.post("/user/signup",function(req,res){
       })
       app.get("/user/verify",cors(corsOptions),function(req,res){
         (jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) =>{
-          if (err) res.status(404).json(err)
+          if (err) res.status(404).json(req.cookies)
           else {res.json(decodedToken)};
         }));
       })
