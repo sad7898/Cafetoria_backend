@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser')
 const path = require('path');
 const app = express();
+let cors = require('cors');
 let bcrypt = require("bcrypt");
 let cookieParser = require('cookie-parser');
 app.use(bodyParser.urlencoded({extended:false}));
@@ -21,6 +22,7 @@ let errorMessage={};
 let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
+app.use(cors())
 require('./server/passportConfig.js')(passport);
 
 
