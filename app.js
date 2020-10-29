@@ -108,7 +108,7 @@ app.post("/user/signup",function(req,res){
       })
       app.get("/user/verify",function(req,res){
         (jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) =>{
-          if (err) res.status(404).json({jwtInvalid: "Invalid token"})
+          if (err) res.status(404).json(err)
           else {res.json(decodedToken)};
         }));
       })
