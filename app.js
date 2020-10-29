@@ -27,7 +27,8 @@ require('./server/passportConfig.js')(passport);
 
 
 const corsOptions = {
-	origin: "http://localhost:3000"
+	origin: "http://localhost:3000",
+	credentials: true
 }
 app.post("/user/signup",function(req,res){
     let newUser = new User({
