@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "cafetoria-backend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -22,8 +22,8 @@
     "test" : "echo \"Error: no test speicifed",
     "start": "node app.js"
   },
-  "eslintConfig": {
-    "extends": "react-app"
+  "engines": {
+    "node": "12.18.3"
   },
   "browserslist": {
     "production": [
@@ -37,10 +37,9 @@
       "last 1 safari version"
     ]
   },
-  "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
   "main": "app.js",
   "devDependencies": {},
   "keywords": [],
-  "author": "",
+  "author": "sira3",
   "license": "ISC"
 }
