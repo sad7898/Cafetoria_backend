@@ -98,7 +98,6 @@ app.post("/user/signup",function(req,res){
                   if (err) res.status(404).json({cannotSign:"error when signing jwt"})
                   else  {
                     res.cookie('token', token, { httpOnly: true,maxAge: 360000 });
-                    res.json({token})
                   }
                 })
               }
