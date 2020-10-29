@@ -22,14 +22,12 @@ let errorMessage={};
 let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
-app.use(cors())
-require('./server/passportConfig.js')(passport);
-
-
 const corsOptions = {
 	origin: "http://localhost:3000",
 	credentials: true
 }
+app.use(cors(corsOptions))
+require('./server/passportConfig.js')(passport);
 app.post("/user/signup",function(req,res){
     let newUser = new User({
       user: req.body.user,
@@ -109,7 +107,7 @@ app.post("/user/signup",function(req,res){
           }
         })}
       })
-      app.get("/user/verify",cors(corsOptions),function(req,res){
+      app.get("/user/verify",function(req,res){
         (jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) =>{
           if (err) res.status(404).json(req.cookies)
           else {res.json(decodedToken)};
