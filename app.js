@@ -23,7 +23,7 @@ let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
-	origin: "https://5f9afe5879fd442700027beb--cafetoria-frontend.netlify.app",
+	origin: "https://5f9bf7a14b89850df2198406--cafetoria-frontend.netlify.app",
 	credentials: true
 }
 app.use(cors(corsOptions))
@@ -122,8 +122,8 @@ app.post("/user/signup",function(req,res){
   
 
 
-      app.get("/post/:q",function(req,res){
-        let query = req.params.q;
+      app.get("/post/:id",function(req,res){
+        let query = req.params.id;
         console.log(query);
         let result;
         Post.find({topic:query},(err,post) => {
@@ -140,7 +140,7 @@ app.post("/user/signup",function(req,res){
         postList.exec(function(err,post){
           if(err) console.log(err)
           else {
-            res.send(post.map((val)=> ({topic: val.topic, id: val._id,created: val.created,author: val.author.user, userId: val.author._id})))
+            res.json(post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user, userId: val.author._id})))
           };
         })
        
@@ -166,7 +166,7 @@ app.post("/user/signup",function(req,res){
                       if (err) res.status(404).json({error: "something's wrong"});
                 
                     })
-                    res.redirect("/forum/GeneralDiss/post");
+                    res.send('okay')
                     
                   }
                 })
