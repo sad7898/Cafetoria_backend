@@ -97,7 +97,7 @@ app.post("/user/signup",function(req,res){
                 jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
                   if (err) res.status(404).json({cannotSign:"error when signing jwt"})
                   else  {
-                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite:"none",secure: true });
+                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: true });
                     res.json({token})
                   }
                 })
@@ -126,16 +126,36 @@ app.post("/user/signup",function(req,res){
         let query = req.params.id;
         console.log(query);
         let result;
-        Post.find({_id:query},(err,post) => {
-          if (err) console.log(err)
-          else {
-          	query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created,text:val.text}));
-          	res.json(query)
-          }
+        let exe = Post.find({_id:query}).populate({path: 'author',option: {lean: true}}).lean();
+        exe.exec((err,post) => {
+        	if (err) res.status(404).json({'error':"can't find post lol"})
+       		else{
+       			jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
+       					result = post.map((val)=> ({topic: val.topic, author: val.author.user,id: val._id,created: val.created,text:val.text}));
+       				    console.log("this is post author "+result[0].author)
+       					console.log("this is decoded author "+decodedToken.user)
+       				if (err) {
+       					console.log(err)
+       					result[0]['isAuthor'] = false;
+       					res.json(result)
+       				}
+       				else if (decodedToken.user == result[0].author ){
+       					result[0]['isAuthor'] = true;
+       					res.json(result)
+       				}
+       				else{
+       					console.log("this is post author "+post.author)
+       					console.log("this is decoded author "+decodedToken.user)
+       					result[0]['isAuthor'] = false;
+       					res.json(result)
+       				}
+       			})
+       		}
         })
       })
-      app.get("/api/post",function(req,res){
-        const postList = Post.find({}).populate({path: 'author',option: {lean: true}}).lean();
+      app.get("/api/post/:page",function(req,res){
+      	let jump = req.params.page;
+        let postList = Post.find({}).sort({created:-1}).limit(10).populate({path: 'author',option: {lean: true}}).lean();
         postList.exec(function(err,post){
           if(err) console.log(err)
           else {
@@ -174,6 +194,30 @@ app.post("/user/signup",function(req,res){
       })
       }
       )
+      app.delete('/post/:id',function(req,res){
+      	let id = req.params.id;
+      	let exe = Post.findOne({_id:id}).populate({path: 'author'})
+      	jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
+      		if (err) res.status(404).json({error: 'jwt not found'})
+      		else {
+      			exe.exec((err,post) => {
+      				if (err) res.status(404).json({error: 'post not found'})
+      				else{
+      					console.log(post.author)
+      					if (post.author.user == decodedToken.user) {
+      						post.deleteOne((err,result) => {
+      							if (err) console.log(err)
+      							else res.send('post removed')
+      						})
+      					}
+      					else{
+      						res.status(404).json({error: 'invalid author'})
+      					}
+      				}
+      			})
+      		}
+      	})
+      })
 
 
 app.get('/',(req,res) => {
