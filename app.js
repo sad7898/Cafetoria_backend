@@ -23,7 +23,7 @@ let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
-	origin: "https://5f9bfa2ee996fa009347e3a8--cafetoria-frontend.netlify.app",
+	origin: "https://5f9bff0ea3241010b0b40dfc--cafetoria-frontend.netlify.app",
 	credentials: true
 }
 app.use(cors(corsOptions))
@@ -163,7 +163,6 @@ app.post("/user/signup",function(req,res){
                     userFound.post.push(postSaved);
                     userFound.save((err,userSavedPost) => {
                       if (err) res.status(404).json({error: "something's wrong"});
-                
                     })
                     res.send('okay')
                     
