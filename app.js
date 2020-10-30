@@ -153,8 +153,7 @@ app.post("/user/signup",function(req,res){
        		}
         })
       })
-      app.get("/api/post/:page",function(req,res){
-      	let jump = req.params.page;
+      app.get("/api/post",function(req,res){
         let postList = Post.find({}).sort({created:-1}).limit(10).populate({path: 'author',option: {lean: true}}).lean();
         postList.exec(function(err,post){
           if(err) console.log(err)
