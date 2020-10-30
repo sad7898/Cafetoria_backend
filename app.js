@@ -23,7 +23,7 @@ let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
-	origin: "https://5f9bf7a14b89850df2198406--cafetoria-frontend.netlify.app",
+	origin: "https://5f9bfa2ee996fa009347e3a8--cafetoria-frontend.netlify.app",
 	credentials: true
 }
 app.use(cors(corsOptions))
@@ -126,13 +126,12 @@ app.post("/user/signup",function(req,res){
         let query = req.params.id;
         console.log(query);
         let result;
-        Post.find({topic:query},(err,post) => {
+        Post.find({_id:query},(err,post) => {
           if (err) console.log(err)
-          else query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created}));
-        })
-        Post.find({text:query},(err,post) => {
-          if (err) console.log(err)
-          else query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created}));
+          else {
+          	query = post.map((val)=> ({topic: val.topic, id: val._id,created: val.created,text:val.text}));
+          	res.json(query)
+          }
         })
       })
       app.get("/api/post",function(req,res){
