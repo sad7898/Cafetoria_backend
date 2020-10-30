@@ -24,7 +24,7 @@ app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
 	origin: "https://5f9c20898ca14c0112ebe955--cafetoria-frontend.netlify.app",
-	method: ['GET','PUT','POST','DELETE'],
+	methods: ['GET','PUT','POST','DELETE'],
 	credentials: true
 }
 app.use(cors(corsOptions))
