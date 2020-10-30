@@ -23,7 +23,7 @@ let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
-	origin: "https://5f9c27bf8ca14c0d8cebe708--cafetoria-frontend.netlify.app",
+	origin: "https://cafetoria-frontend.netlify.app",
 	credentials: true
 }
 app.use(cors(corsOptions))
