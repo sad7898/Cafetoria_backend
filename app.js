@@ -115,8 +115,7 @@ app.post("/user/signup",function(req,res){
       })
 
       app.post('/user/signout',function(req,res){
-        res.clearCookie('token');
-        res.send("cleared!");
+        res.cookie('token',0,{maxAge: 0})
       })
       app.get("/post/:id",function(req,res){
         let query = req.params.id;
