@@ -129,8 +129,6 @@ app.post("/user/signup",function(req,res){
        		else{
        			jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
        					result = post.map((val)=> ({topic: val.topic, author: val.author.user,id: val._id,created: val.created,text:val.text}));
-       				    console.log("this is post author "+result[0].author)
-       					console.log("this is decoded author "+decodedToken.user)
        				if (err) {
        					console.log(err)
        					result[0]['isAuthor'] = false;
