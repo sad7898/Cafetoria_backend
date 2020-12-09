@@ -23,16 +23,19 @@ let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
-	origin: "https://cafetoria-frontend.netlify.app",
+	origin: "https://cafetoria-frontend.netlify.app/",
 	credentials: true
 }
+const seeding = require('./server/seeding.js')
 app.use(cors(corsOptions))
 require('./server/passportConfig.js')(passport);
 app.post("/user/signup",function(req,res){
     let newUser = new User({
       user: req.body.user,
       password: req.body.password,
-      email: req.body.email
+      email: req.body.email,
+      post: [],
+      liked: []
     })
     let validateToken =  inputValidator(newUser,true);
     if (validateToken.isValid){
@@ -150,15 +153,24 @@ app.post("/user/signup",function(req,res){
        		}
         })
       })
-      app.get("/api/post",function(req,res){
-        let postList = Post.find({}).sort({created:-1}).limit(10).populate({path: 'author',option: {lean: true}}).lean();
+       app.get("/api/post",function(req,res){
+        let currentPage = req.query.p;
+        console.log(req.query)
+        let postList =  Post.find({}).select({topic:1,author:1}).sort({created:-1}).skip(parseInt(currentPage)*10).limit(10).populate({path: 'author',option: {lean: true}}).lean();
+        let countQuery =   Post.estimatedDocumentCount()
         postList.exec(function(err,post){
           if(err) console.log(err)
           else {
-            res.json(post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user, userId: val.author._id})))
+            result = post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user}))
+            countQuery.exec(function(err,count){
+              res.json({'post':result,'count':count})
+            })
           };
         })
        
+      })
+      app.get('/api/pie',function(req,res){
+        let pieData = Post.find({}).select({'_id':0,'tags':1})
       })
       app.post('/post', function (req, res){
         jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
@@ -214,7 +226,13 @@ app.post("/user/signup",function(req,res){
       		}
       	})
       })
+app.get('/seed',(req,res)=> {
+  Post.insertMany(seeding,function(err,done){
+    if (err) console.log(err)
+    else res.send('done')
+  })
 
+})
 
 app.get('/',(req,res) => {
   res.send('nothing here')
