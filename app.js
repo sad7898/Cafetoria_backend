@@ -23,16 +23,19 @@ let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
-	origin: "https://cafetoria-frontend.netlify.app",
+	origin: "http://localhost:3000",
 	credentials: true
 }
+const seeding = require('./server/seeding.js')
 app.use(cors(corsOptions))
 require('./server/passportConfig.js')(passport);
 app.post("/user/signup",function(req,res){
     let newUser = new User({
       user: req.body.user,
       password: req.body.password,
-      email: req.body.email
+      email: req.body.email,
+      post: [],
+      liked: []
     })
     let validateToken =  inputValidator(newUser,true);
     if (validateToken.isValid){
@@ -97,7 +100,7 @@ app.post("/user/signup",function(req,res){
                 jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
                   if (err) res.status(404).json({cannotSign:"error when signing jwt"})
                   else  {
-                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: true });
+                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: false });
                     res.json({token})
                   }
                 })
@@ -125,7 +128,7 @@ app.post("/user/signup",function(req,res){
         let result;
         let exe = Post.find({_id:query}).populate({path: 'author',option: {lean: true}}).lean();
         exe.exec((err,post) => {
-        	if (err) res.status(404).json({'error':"can't find post lol"})
+        	if (err) res.status(404).json({'error':"post not found"})
        		else{
        			jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
        					result = post.map((val)=> ({topic: val.topic, author: val.author.user,id: val._id,created: val.created,text:val.text}));
@@ -148,16 +151,65 @@ app.post("/user/signup",function(req,res){
        		}
         })
       })
-      app.get("/api/post",function(req,res){
-        let postList = Post.find({}).sort({created:-1}).limit(10).populate({path: 'author',option: {lean: true}}).lean();
-        postList.exec(function(err,post){
-          if(err) console.log(err)
-          else {
-            res.json(post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user, userId: val.author._id})))
-          };
-        })
-       
+       app.get("/api/post",function(req,res){
+        let currentPage = req.query.p;
+        let postList;
+        let count;
+        let collectionCount
+        Post.estimatedDocumentCount().exec((err,res) => (collectionCount=res))
+        if (req.query.topic && req.query.tags) postList =  Post.find({topic: req.query.topic,tags:{'$all': req.query.tags}}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
+        else if (req.query.tags) postList = Post.find({tags: {"$all": req.query.tags}}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
+        else if (req.query.topic) postList = Post.find({topic: req.query.topic}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
+        else {
+          postList = Post.find({}).select({topic:1,author:1,tags:1}).sort({created:-1}).skip(parseInt(currentPage)*10).limit(10).populate({path: 'author',option: {lean: true}}).lean();
+          postList.exec(function(err,post){
+            if(err) res.status(404).json(err)
+            else {
+              result = post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
+              res.send({'post':result,'count':collectionCount});
+            }
+          })
+        }
+        if (req.query.topic || req.query.tags){
+        postList
+          .then((foundQuery) => {
+            count = foundQuery.length
+            return foundQuery
+          })
+          .then((post) => {
+            let result
+            if (count<= currentPage*10) result = post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
+            else result =post.slice(currentPage*10,(currentPage*10)+11).map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
+            res.send({'post':result,'count':count})
+          })
+          .catch((err) => res.status(404).json(err))
+        }
+       // .select({topic:1,author:1,tags:1}).sort({created:-1}).skip(parseInt(currentPage)*10).limit(10).populate({path: 'author',option: {lean: true}}).lean();
       })
+      app.get('/api/pie',function(req,res){
+        let tagCount = {
+          'fast-food':0,
+          'fruits':0,
+          'carbohydrates':0,
+          'meat':0,
+          'veggie':0
+        }
+        let pieData = Post.find({}).select({'_id':0,'tags':1}).lean()
+        pieData.exec(function(err,data){
+          if (err) res.send(err)
+          else {
+            for (i in data){
+              for (indx in data[i]['tags']){
+                tagCount[data[i]['tags'][indx]]+=1
+              }
+            }
+            res.send(tagCount)
+          }
+          })
+  
+        })
+
+    
       app.post('/post', function (req, res){
         jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
           if (err) res.status(400).json(err)
@@ -168,7 +220,8 @@ app.post("/user/signup",function(req,res){
                   let newPost = new Post({
                     topic: req.body.postTopic+"",
                     text: req.body.postText,
-                    author: userFound._id
+                    author: userFound._id,
+                    tags: req.body.tags
                 })
                 newPost.save((err,postSaved) => {
                   if(err) res.status(404).json({error: "cannot save post"})
@@ -212,7 +265,13 @@ app.post("/user/signup",function(req,res){
       		}
       	})
       })
+app.get('/seed',(req,res)=> {
+  Post.insertMany(seeding,function(err,done){
+    if (err) console.log(err)
+    else res.send('done')
+  })
 
+})
 
 app.get('/',(req,res) => {
   res.send('nothing here')
