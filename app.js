@@ -23,7 +23,7 @@ let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
-	origin: "http://localhost:3000",
+	origin: "https://cafetoria-frontend.netlify.app",
 	credentials: true
 }
 const seeding = require('./server/seeding.js')
@@ -100,7 +100,7 @@ app.post("/user/signup",function(req,res){
                 jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
                   if (err) res.status(404).json({cannotSign:"error when signing jwt"})
                   else  {
-                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: false });
+                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: true });
                     res.json({token})
                   }
                 })
