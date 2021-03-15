@@ -14,12 +14,9 @@ mongoose.connect(key.mongoURI);
 const Post = require('./server/model/post.js');
 const User = require('./server/model/user.js'); 
 const inputValidator = require('./server/register.js');
-const { ExtractJwt } = require('passport-jwt');
 const passport = require('passport');
 const jwt = require("jsonwebtoken");
-const { decode } = require('punycode');
 let errorMessage={};
-let postModule = require('./server/postAPI.js')
 app.use(cookieParser());
 app.use(passport.initialize());
 const corsOptions = {
