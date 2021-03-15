@@ -100,7 +100,7 @@ app.post("/user/signup",function(req,res){
                 jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
                   if (err) res.status(404).json({cannotSign:"error when signing jwt"})
                   else  {
-                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: false });
+                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: true });
                     res.json({token})
                   }
                 })
@@ -134,8 +134,6 @@ app.post("/user/signup",function(req,res){
        		else{
        			jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
        					result = post.map((val)=> ({topic: val.topic, author: val.author.user,id: val._id,created: val.created,text:val.text}));
-       				    console.log("this is post author "+result[0].author)
-       					console.log("this is decoded author "+decodedToken.user)
        				if (err) {
        					console.log(err)
        					result[0]['isAuthor'] = false;
