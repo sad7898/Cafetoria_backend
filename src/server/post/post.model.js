@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-var postScheme = new mongoose.Schema({
+
+const postScheme = new mongoose.Schema({
     topic:String,
     text: String,
     author : {type: mongoose.Schema.Types.ObjectId, ref: "User"},
