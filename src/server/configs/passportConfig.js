@@ -1,12 +1,15 @@
 const mongoose = require('mongoose')
-let ExtractJwt =  require('passport-jwt').ExtractJwt;
 let JwtStrategy = require('passport-jwt').Strategy;
 let key = require("../key.js")
 const User = require('../user/user.model.js');
-const option = {}
-option.secretOrKey = key.secretOrKey;
+const option = {
+    secretOrKey: key.secretOrKey,
+    jwtFromRequest: cookieExtractor
+}
 const cookieExtractor = (req) => {
-    if (req && req.cookies) token = req.cookies['jwt']
+    var token=null;
+    if (req && req.cookies) token = req.cookies['token']
+    return token
 }
 module.exports = passport => {
     passport.use(new JwtStrategy(option, (jwt_payload,done) => {

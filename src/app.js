@@ -109,7 +109,7 @@ app.get("/post/:id",function(req,res){
         })
 
     
-      app.post('/post', function (req, res){
+      app.post('/post', passport.authenticate('jwt'),function (req, res){
         jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
           if (err) res.status(400).json(err)
           else {
@@ -140,7 +140,7 @@ app.get("/post/:id",function(req,res){
       })
       }
       )
-      app.delete('/post/:id',function(req,res){
+      app.delete('/post/:id',passport.authenticate('jwt'),function(req,res){
       	let id = req.params.id;
       	let exe = Post.findOne({_id:id}).populate({path: 'author'})
       	jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
@@ -164,4 +164,5 @@ app.get("/post/:id",function(req,res){
       		}
       	})
       })
+  
 app.listen(process.env.PORT || 8080,() => console.log('works'));
