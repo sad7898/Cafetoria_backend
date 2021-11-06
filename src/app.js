@@ -1,31 +1,36 @@
 const express = require('express');
 const bodyParser = require('body-parser')
 const path = require('path');
+
 const app = express();
-let cors = require('cors');
-let cookieParser = require('cookie-parser');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'build')));
-const corsOptions = require('./server/configs/app.config')
 const mongoose = require('mongoose')
+const corsOptions = require('./server/configs/app.config')
+
 mongoose.connect(key.mongoURI);
 const Post = require('./server/post/post.model.js');
 const passport = require('passport');
 const userController = require('./server/user/user.controller')
+
 app.use(cookieParser());
 app.use(passport.initialize());
 require('./server/configs/passportConfig.js')(passport);
+
 app.use(cors(corsOptions))
 app.post("/user/signup",userController.register)
 app.post("/user/login",userController.login) 
 app.get("/user/verify",userController.verifyUser)
 app.post('/user/signout',userController.logout)
-app.get("/post/:id",function(req,res){
-        let query = req.params.id;
+app.get("/post/:id",(req,res) => {
+        const query = req.params.id;
         console.log(query);
         let result;
-        let exe = Post.find({_id:query}).populate({path: 'author',option: {lean: true}}).lean();
+        const exe = Post.find({_id:query}).populate({path: 'author',option: {lean: true}}).lean();
         exe.exec((err,post) => {
         	if (err) res.status(404).json({'error':"post not found"})
        		else{
@@ -33,25 +38,25 @@ app.get("/post/:id",function(req,res){
        					result = post.map((val)=> ({topic: val.topic, author: val.author.user,id: val._id,created: val.created,text:val.text}));
        				if (err) {
        					console.log(err)
-       					result[0]['isAuthor'] = false;
+       					result[0].isAuthor = false;
        					res.json(result)
        				}
        				else if (decodedToken.user == result[0].author ){
-       					result[0]['isAuthor'] = true;
+       					result[0].isAuthor = true;
        					res.json(result)
        				}
        				else{
-       					console.log("this is post author "+post.author)
-       					console.log("this is decoded author "+decodedToken.user)
-       					result[0]['isAuthor'] = false;
+       					console.log(`this is post author ${post.author}`)
+       					console.log(`this is decoded author ${decodedToken.user}`)
+       					result[0].isAuthor = false;
        					res.json(result)
        				}
        			})
        		}
         })
       })
-       app.get("/api/post",function(req,res){
-        let currentPage = req.query.p;
+       app.get("/api/post",(req,res) => {
+        const currentPage = req.query.p;
         let postList;
         let count;
         let collectionCount
@@ -61,7 +66,7 @@ app.get("/post/:id",function(req,res){
         else if (req.query.topic) postList = Post.find({topic: req.query.topic}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
         else {
           postList = Post.find({}).select({topic:1,author:1,tags:1}).sort({created:-1}).skip(parseInt(currentPage)*10).limit(10).populate({path: 'author',option: {lean: true}}).lean();
-          postList.exec(function(err,post){
+          postList.exec((err,post) => {
             if(err) res.status(404).json(err)
             else {
               result = post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
@@ -85,21 +90,21 @@ app.get("/post/:id",function(req,res){
         }
        // .select({topic:1,author:1,tags:1}).sort({created:-1}).skip(parseInt(currentPage)*10).limit(10).populate({path: 'author',option: {lean: true}}).lean();
       })
-      app.get('/api/pie',function(req,res){
-        let tagCount = {
+      app.get('/api/pie',(req,res) => {
+        const tagCount = {
           'fast-food':0,
           'fruits':0,
           'carbohydrates':0,
           'meat':0,
           'veggie':0
         }
-        let pieData = Post.find({}).select({'_id':0,'tags':1}).lean()
-        pieData.exec(function(err,data){
+        const pieData = Post.find({}).select({'_id':0,'tags':1}).lean()
+        pieData.exec((err,data) => {
           if (err) res.send(err)
           else {
             for (i in data){
-              for (indx in data[i]['tags']){
-                tagCount[data[i]['tags'][indx]]+=1
+              for (indx in data[i].tags){
+                tagCount[data[i].tags[indx]]+=1
               }
             }
             res.send(tagCount)
@@ -109,15 +114,15 @@ app.get("/post/:id",function(req,res){
         })
 
     
-      app.post('/post', passport.authenticate('jwt'),function (req, res){
+      app.post('/post', passport.authenticate('jwt'),(req, res) => {
         jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
           if (err) res.status(400).json(err)
           else {
               User.findOne({user: decodedToken.user}, (err,userFound) => {
                 if (err) {res.status(404).json({error:"user not found"})}
                 else{
-                  let newPost = new Post({
-                    topic: req.body.postTopic+"",
+                  const newPost = new Post({
+                    topic: `${req.body.postTopic}`,
                     text: req.body.postText,
                     author: userFound._id,
                     tags: req.body.tags
@@ -140,9 +145,9 @@ app.get("/post/:id",function(req,res){
       })
       }
       )
-      app.delete('/post/:id',passport.authenticate('jwt'),function(req,res){
-      	let id = req.params.id;
-      	let exe = Post.findOne({_id:id}).populate({path: 'author'})
+      app.delete('/post/:id',passport.authenticate('jwt'),(req,res) => {
+      	const {id} = req.params;
+      	const exe = Post.findOne({_id:id}).populate({path: 'author'})
       	jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
       		if (err) res.status(404).json({error: 'jwt not found'})
       		else {

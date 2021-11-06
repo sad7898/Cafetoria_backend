@@ -1,5 +1,5 @@
-let arr =[]
-let tags = ['veggie','meat','fast-food','carbohydrates','fruits','fast-food']
+const arr =[]
+const tags = ['veggie','meat','fast-food','carbohydrates','fruits','fast-food']
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);

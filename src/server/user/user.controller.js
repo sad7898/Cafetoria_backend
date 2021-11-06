@@ -1,4 +1,5 @@
 const userService = require('./user.service')
+
 const register = async (req,res) => {
     const result = await userService.registerUser(req.body.user,req.body.password,req.body.email);
     if (result.user) res.send(result.user);

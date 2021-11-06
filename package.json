@@ -9,6 +9,7 @@
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
+    "eslint": "7.2.0",
     "express": "^4.17.1",
     "is-empty": "^1.2.0",
     "jquery": "^3.5.1",
@@ -17,6 +18,7 @@
     "mongoose": "^5.9.27",
     "passport": "^0.4.1",
     "passport-jwt": "^4.0.0",
+    "prettier": "^2.4.1",
     "uuid": "^8.3.0",
     "validator": "^13.1.1"
   },
@@ -37,7 +39,12 @@
     ]
   },
   "main": "app.js",
-  "devDependencies": {},
+  "devDependencies": {
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-config-airbnb-base": "14.2.1",
+    "eslint-plugin-import": "2.22.1"
+  },
   "keywords": [],
   "author": "sira3",
   "license": "ISC"

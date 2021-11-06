@@ -1,9 +1,10 @@
 
-var validator = require('validator');
-var isEmpty = require('is-empty');
+const validator = require('validator');
+const isEmpty = require('is-empty');
+
 module.exports = (data,needEmail) => {
-    let error = {};
-    let checkList = (needEmail) ? ["user","password","email"] : ["user","password"]
+    const error = {};
+    const checkList = (needEmail) ? ["user","password","email"] : ["user","password"]
     checkList.forEach((val) => {
         data[val] = (isEmpty(data[val]) ? "" : data[val]);
         if (validator.isEmpty(data[val])) error[val] = "is required";
@@ -12,8 +13,8 @@ module.exports = (data,needEmail) => {
         if (!validator.isEmail(data.email)) error.email = "Email is invalid";
     }
     if (!validator.isLength(data.password, {min: 7, max: 16})) error.password = "Invalid password length";
-    let us = data.user;
-    let pw = data.password;
+    const us = data.user;
+    const pw = data.password;
     if (
     us.replace(/\.\.+/g,"").replace(/[.*+\-?^${}()|[\]\\@#$%\']/g, '').length != us.length || 
     pw.replace(/\.\.+/g).replace(/[.*+\-?^${}()|[\]\\@#$%\']/g, '').length != pw.length
