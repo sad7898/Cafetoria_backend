@@ -1,4 +1,3 @@
-const mongoose = require('mongoose')
 const JwtStrategy = require('passport-jwt').Strategy;
 const key = require("../key.js")
 const User = require('../user/user.model.js');

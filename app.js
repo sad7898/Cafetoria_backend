@@ -1,132 +1,33 @@
 const express = require('express');
 const bodyParser = require('body-parser')
 const path = require('path');
+const passport = require('passport');
 
 const app = express();
 const cors = require('cors');
-const bcrypt = require("bcrypt");
 const cookieParser = require('cookie-parser');
 
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'build')));
 const mongoose = require('mongoose')
-const key = require('./server/key.js');
+const corsOptions = require('./src/server/configs/app.config')
+const key = require('./src/server/configs/db.config')
 
 mongoose.connect(key.mongoURI);
-const Post = require('./server/model/post.js');
-const User = require('./server/model/user.js'); 
-const inputValidator = require('./server/register.js');
-const passport = require('passport');
-const jwt = require("jsonwebtoken");
+const Post = require('./src/server/post/post.model.js');
+const userController = require('./src/server/user/user.controller')
 
-const errorMessage={};
 app.use(cookieParser());
 app.use(passport.initialize());
-const corsOptions = {
-	origin: "https://cafetoria-frontend.netlify.app",
-	credentials: true
-}
-require('./server/passportConfig.js')(passport);
-const seeding = require('./server/seeding.js')
+require('./src/server/configs/passportConfig.js')(passport);
 
 app.use(cors(corsOptions))
-app.post("/user/signup",(req,res) => {
-    const newUser = new User({
-      user: req.body.user,
-      password: req.body.password,
-      email: req.body.email,
-      post: [],
-      liked: []
-    })
-    const validateToken =  inputValidator(newUser,true);
-    if (validateToken.isValid){
-    User.findOne({user: newUser.user}, (err,found) => {
-      if (err) console.log(err);
-      else if (found){
-        errorMessage.userDup = "This username is already taken.";
-        res.status(400).json(errorMessage);
-      }
-      else User.findOne({email: newUser.email}, (err,found) => {
-        if (err) console.log(err);
-        else if (found){
-          errorMessage.emailDup = "This email is already taken.";
-          res.status(400).json(errorMessage);
-        }
-        else {
-          bcrypt.genSalt(10, (err,salt) => {
-              bcrypt.hash(newUser.password,salt, (err,hash) => {
-              if (err) throw err;
-              else {
-                newUser.password = hash;
-                newUser.save((err,userSaved) => {
-                  if (err) console.log(err);
-                  else if (userSaved) {
-                    console.log(userSaved);
-                    res.send('Success')
-                  }
-                  else res.status(400).json(errorMessage);
-                })
-              }
-            })
-          })
-        }
-      })
-    })
-  }
-  else {
-    res.status(400).json(validateToken.error);
-  } 
-  })
-
-  app.post("/user/login",(req,res) => {
-      const loggedUser = new User({
-        user: req.body.user,
-        password: req.body.password
-      })
-      const validateLogin = inputValidator(loggedUser,false);
-      if (!validateLogin.isValid) res.status(404).json(validateLogin.error);
-      else{
-      User.findOne({user: loggedUser.user},(err,userFound) => {
-          if (err) res.status(404).json({inputError: "Some error occured!"});
-          if (!userFound) res.status(404).json({inputNotFound:"Invalid Username or Password"});
-          else {
-            bcrypt.compare(loggedUser.password,userFound.password)
-            .then((isMatch) => {
-              if (isMatch){
-                console.log(userFound._id)
-                const payload = {
-                  user: userFound.user,
-                  id: userFound._id
-                };
-                jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
-                  if (err) res.status(404).json({cannotSign:"error when signing jwt"})
-                  else  {
-                    res.cookie('token', token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: true });
-                    res.json({token})
-                  }
-                })
-              }
-              else res.status(404).json({inputNotFound:"Invalid Username or Password"})
-            })
-          }
-        })}
-      })
-
-      app.get("/user/verify",(req,res) => {
-        (jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) =>{
-          if (err) res.status(404).json(req.cookies)
-          else {res.json(decodedToken)};
-        }));
-      })
-
-      app.post('/user/signout',(req,res) => {
-        res.clearCookie('token');
-        res.cookie('token', 'none', { httpOnly: true,maxAge: 0,sameSite: "none",secure: true });
-        res.send("cleared!");
-      })
-
-      app.get("/post/:id",(req,res) => {
+app.post("/user/signup",userController.register)
+app.post("/user/login",userController.login) 
+app.get("/user/verify",userController.verifyUser)
+app.post('/user/signout',userController.logout)
+app.get("/post/:id",(req,res) => {
         const query = req.params.id;
         console.log(query);
         let result;
@@ -214,7 +115,7 @@ app.post("/user/signup",(req,res) => {
         })
 
     
-      app.post('/post', (req, res) => {
+      app.post('/post', passport.authenticate('jwt'),(req, res) => {
         jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
           if (err) res.status(400).json(err)
           else {
@@ -245,7 +146,7 @@ app.post("/user/signup",(req,res) => {
       })
       }
       )
-      app.delete('/post/:id',(req,res) => {
+      app.delete('/post/:id',passport.authenticate('jwt'),(req,res) => {
       	const {id} = req.params;
       	const exe = Post.findOne({_id:id}).populate({path: 'author'})
       	jwt.verify(req.cookies.token,key.secretOrKey,(err,decodedToken) => {
@@ -269,17 +170,5 @@ app.post("/user/signup",(req,res) => {
       		}
       	})
       })
-app.get('/seed',(req,res)=> {
-  Post.insertMany(seeding,(err,done) => {
-    if (err) console.log(err)
-    else res.send('done')
-  })
-
-})
-
-app.get('/',(req,res) => {
-  res.send('nothing here')
-})
-
-
+  
 app.listen(process.env.PORT || 8080,() => console.log('works'));

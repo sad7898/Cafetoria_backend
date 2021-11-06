@@ -2,8 +2,8 @@ const validator = require('validator');
 const jwt = require("jsonwebtoken");
 const isEmpty = require('is-empty');
 const bcrypt = require("bcrypt");
-const User = require('./server/user/user.model.js');
-const key = require('./server/key.js');
+const User = require('./user.model.js');
+const key = require('../configs/db.config');
 
 const validateAuth = (data,needEmail) => {
     const error = {};
@@ -19,8 +19,8 @@ const validateAuth = (data,needEmail) => {
     const us = data.user;
     const pw = data.password;
     if (
-    us.replace(/\.\.+/g,"").replace(/[.*+\-?^${}()|[\]\\@#$%\']/g, '').length != us.length || 
-    pw.replace(/\.\.+/g).replace(/[.*+\-?^${}()|[\]\\@#$%\']/g, '').length != pw.length
+    us.replace(/\.\.+/g,"").replace(/[.*+\-?^${}()|[\]\\@#$%\']/g, '').length !== us.length || 
+    pw.replace(/\.\.+/g).replace(/[.*+\-?^${}()|[\]\\@#$%\']/g, '').length !== pw.length
     ) {
         error.password = "Username or password cannot contain following characters";
     }
@@ -37,30 +37,21 @@ const registerUser = (user,password,email) => {
     })
     const validateToken =  validateAuth(newUser,true);
     if (validateToken.isValid){
-    User.findOne({user: newUser.user}, (err,found) => {
+    User.findOne({ $or : [ { "user" : newUser.user }, {"email": newUser.email} ] }, (err,found) => {
       if (err) throw err
       if (found){
         errorMessage.userDup = "This username is already taken.";
         return errorMessage
       }
-    User.findOne({email: newUser.email}, (err,found) => {
-        if (err) throw err
-        if (found){
-          errorMessage.emailDup = "This email is already taken.";
-          return errorMessage
-        }
-        
-          bcrypt.genSalt(10, (salt) => {
-              bcrypt.hash(newUser.password,salt, (hash) => {
-                newUser.password = hash;
-                newUser.save((err,userSaved) => {
-                  if (err) throw err
-                    return {user: userSaved};
-                })
-            })
+      bcrypt.genSalt(10, (salt) => {
+        bcrypt.hash(newUser.password,salt, (hash) => {
+          newUser.password = hash;
+          newUser.save((err,userSaved) => {
+            if (err) throw err
+              return {user: userSaved};
           })
-        
       })
+    })
     })
   }
   else {
@@ -90,7 +81,7 @@ const login = (user,password) => {
               };
               jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
                 if (err) throw err
-                return {token};
+                return {token,user: userFound.user};
               })
             }
             return {inputNotFound:errorMessage}
