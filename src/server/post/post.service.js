@@ -30,12 +30,12 @@ const createPost = async (post,user) => {
     const newPost = new Post({
       topic: `${post.postTopic}`,
       text: post.postText,
-      author: userFound._id,
+      author: foundUser._id,
       tags: post.tags
     })
-    await newPost.save();
-    userFound.post.push(postSaved);
-    await userFound.save();
+    const postSaved = await newPost.save();
+    foundUser.post.push(postSaved);
+    await foundUser.save();
     return 'okay'
 }
 const deletePost = async (id,user) => {
@@ -44,9 +44,9 @@ const deletePost = async (id,user) => {
         await post.deleteOne()
         return {success:true}
     }
-    else {
+    
         return {error: 'invalid author'}
-    }
+    
 }
 
 module.exports = {getPostById,getPost,createPost,deletePost}
