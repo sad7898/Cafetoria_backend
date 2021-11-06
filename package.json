@@ -24,9 +24,6 @@
     "test": "echo \"Error: no test speicifed",
     "start": "node app.js"
   },
-  "engines": {
-    "node": "12.18.2"
-  },
   "browserslist": {
     "production": [
       ">0.2%",
