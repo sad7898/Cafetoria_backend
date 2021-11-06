@@ -36,7 +36,6 @@ const getPost = async (pageIndex,tags=null,topic=null) => {
             return foundQuery
           })
           .then((post) => {
-            let result
             if (count<= pageIndex*10) result = post.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
             else result =post.slice(pageIndex*10,(pageIndex*10)+11).map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
             return {post:result,count}

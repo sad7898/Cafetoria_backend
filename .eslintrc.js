@@ -17,6 +17,7 @@ module.exports = {
       'no-shadow': 'warn',
       'no-useless-escape': 'off',
       'consistent-return': 'off',
-      'no-underscore-dangle': 'warn'
+      'no-underscore-dangle': 'warn',
+      'no-plusplus': 'off'
     }
   }
