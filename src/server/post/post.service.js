@@ -21,7 +21,7 @@ const getPost = async (pageIndex,tags=null,topic=null) => {
         }
         if (postList.length<= pageIndex*10) result = postList.map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
         else result=postList.slice(pageIndex*10,(pageIndex*10)+11).map((val)=> ({topic: val.topic, id: val._id,author: val.author.user,tags: val.tags}))
-        return {post:result,count}
+        return {post:result,count: postList.length}
 }
 
 const createPost = async (post,user) => {
