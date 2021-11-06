@@ -28,6 +28,8 @@ const validateAuth = (data,needEmail) => {
 }
 const registerUser = async (user,password,email) => {
     const errorMessage = {}
+    const validateToken =  validateAuth({user,password,email},true);
+    if (!validateToken.isValid) return validateToken.error
     const newUser = new User({
       user,
       password,
@@ -35,8 +37,6 @@ const registerUser = async (user,password,email) => {
       post: [],
       liked: []
     })
-    const validateToken =  validateAuth(newUser,true);
-    if (!validateToken.isValid) return validateToken.error
     const foundUser = await User.findOne({ $or : [ { "user" : newUser.user }, {"email": newUser.email} ] });
     if (foundUser) {
       errorMessage.userDup = "This username is already taken.";
@@ -49,16 +49,12 @@ const registerUser = async (user,password,email) => {
   }
 
 const login = async (user,password) => {
-    const userInput = new User({
-      user,
-      password
-    })
-    const validateLogin = validateAuth(userInput,false);
+    const validateLogin = validateAuth({user,password},false);
     const errorMessage = 'Invalid Username or Password'
     if (!validateLogin.isValid) return validateLogin.error;
-    const foundUser = await  User.findOne({user: userInput.user});
+    const foundUser = await  User.findOne({user: user});
     if (!foundUser) return {inputNotFound:errorMessage}
-    const passwordIsValid = await bcrypt.compare(userInput.password,foundUser.password);
+    const passwordIsValid = await bcrypt.compare(password,foundUser.password);
     if (passwordIsValid){
         const payload = {
           user: foundUser.user,

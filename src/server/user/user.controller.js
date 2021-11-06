@@ -7,7 +7,7 @@ const register = async (req,res) => {
 }
 
 const login = async (req,res) => {
-    const result = await userService.login(req.body.user,req.body,req.body.password);
+    const result = await userService.login(req.body.user,req.body.password);
     if (result.token) {
         res.cookie('token', result.token, { httpOnly: true,maxAge: 360000,sameSite: "none",secure: true });
         res.json({token: result.token,user: result.user})
