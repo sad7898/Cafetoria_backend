@@ -1,9 +1,9 @@
 const Post = require('./post.model')
 const User = require('../user/user.model')
 
-const getPostById = async (id) => {
+const getPostById = (id) => {
         let result = null;
-        const exe = await Post.find({_id:id}).populate({path: 'author',option: {lean: true}}).lean();
+        const exe = Post.find({_id:id}).populate({path: 'author',option: {lean: true}}).lean();
         exe.exec((err,post) => {
         	if (err) return null;
        		result = post.map((val)=> ({topic: val.topic, author: val.author.user,id: val._id,created: val.created,text:val.text}));
@@ -11,17 +11,17 @@ const getPostById = async (id) => {
         })
 }
 
-const getPost = async (pageIndex,tags=null,topic=null) => {
+const getPost = (pageIndex,tags=null,topic=null) => {
         let result = {}
         let postList;
         let count;
         let collectionCount
         Post.estimatedDocumentCount().exec((err,res) => {collectionCount=res})
-        if (topic && tags) postList =  await Post.find({topic,tags:{'$all': tags}}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
-        else if (tags) postList = await Post.find({tags: {"$all": tags}}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
-        else if (topic) postList = await Post.find({topic}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
+        if (topic && tags) postList =  Post.find({topic,tags:{'$all': tags}}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
+        else if (tags) postList = Post.find({tags: {"$all": tags}}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
+        else if (topic) postList = Post.find({topic}).select({topic:1,author:1,tags:1}).sort({created:-1}).populate({path: 'author'})
         else {
-          postList = await Post.find({}).select({topic:1,author:1,tags:1}).sort({created:-1}).skip(parseInt(pageIndex)*10).limit(10).populate({path: 'author',option: {lean: true}}).lean();
+          postList = Post.find({}).select({topic:1,author:1,tags:1}).sort({created:-1}).skip(parseInt(pageIndex)*10).limit(10).populate({path: 'author',option: {lean: true}}).lean();
           postList.exec((err,post) => {
             if (err) throw err;
             else {
