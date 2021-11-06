@@ -26,7 +26,7 @@ const validateAuth = (data,needEmail) => {
     }
     return {error, isValid: isEmpty(error)};
 }
-const registerUser = (user,password,email) => {
+const registerUser = async (user,password,email) => {
     const errorMessage = {}
     const newUser = new User({
       user,
@@ -36,30 +36,19 @@ const registerUser = (user,password,email) => {
       liked: []
     })
     const validateToken =  validateAuth(newUser,true);
-    if (validateToken.isValid){
-    User.findOne({ $or : [ { "user" : newUser.user }, {"email": newUser.email} ] }, (err,found) => {
-      if (err) throw err
-      if (found){
-        errorMessage.userDup = "This username is already taken.";
-        return errorMessage
-      }
-      bcrypt.genSalt(10, (salt) => {
-        bcrypt.hash(newUser.password,salt, (hash) => {
-          newUser.password = hash;
-          newUser.save((err,userSaved) => {
-            if (err) throw err
-              return {user: userSaved};
-          })
-      })
-    })
-    })
-  }
-  else {
-    return validateToken.error
-  } 
+    if (!validateToken.isValid) return validateToken.error
+    const foundUser = await User.findOne({ $or : [ { "user" : newUser.user }, {"email": newUser.email} ] });
+    if (foundUser) {
+      errorMessage.userDup = "This username is already taken.";
+      return errorMessage
+    }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newUser.password,salt);
+    newUser.password = hashedPassword;
+    return {user: await newUser.save()}
   }
 
-const login = (user,password) => {
+const login = async (user,password) => {
     const userInput = new User({
       user,
       password
@@ -67,33 +56,27 @@ const login = (user,password) => {
     const validateLogin = validateAuth(userInput,false);
     const errorMessage = 'Invalid Username or Password'
     if (!validateLogin.isValid) return validateLogin.error;
-    
-    User.findOne({user: userInput.user},(err,userFound) => {
-        if (err) throw err
-        if (!userFound) return {inputNotFound:errorMessage}
-        
-          bcrypt.compare(userInput.password,userFound.password)
-          .then((isMatch) => {
-            if (isMatch){
-              const payload = {
-                user: userFound.user,
-                id: userFound._id
-              };
-              jwt.sign(payload,key.secretOrKey,{expiresIn: 300000},(err,token) => {
-                if (err) throw err
-                return {token,user: userFound.user};
-              })
-            }
-            return {inputNotFound:errorMessage}
-          })
-        
-      })
-    }
-const verifyUser = (cookies) => {
-    jwt.verify(cookies.token,key.secretOrKey,(err,decodedToken) => {
-        if (err) return {isValid: false}
-        return {isValid: decodedToken}
-    });
+    const foundUser = await  User.findOne({user: userInput.user});
+    if (!foundUser) return {inputNotFound:errorMessage}
+    const passwordIsValid = await bcrypt.compare(userInput.password,foundUser.password);
+    if (passwordIsValid){
+        const payload = {
+          user: foundUser.user,
+          id: foundUser._id
+        };
+        const token = await jwt.sign(payload,key.secretOrKey,{expiresIn: 300000})
+        return {token,user: user.user};
+      }
+      return {inputNotFound:errorMessage}
+  }
+const verifyUser = async (cookies) => {
+  try {
+    const payload = await jwt.verify(cookies.token,key.secretOrKey)
+    return {isValid: payload}
+  }
+  catch(err) {
+    return {isValid: false}
+  }
 }
 
 
